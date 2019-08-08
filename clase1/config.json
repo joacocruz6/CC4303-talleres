@@ -1,7 +1,7 @@
 { 
     "user": "joaquin.cruz@ug.uchile.cl",
 
-    "blocked": ["http://anakena.dcc.uchile.cl:8989/secret/", "http://www.google.com"],
+    "blocked": ["http://dcc.uchile.cl/", "http://www.uchile.cl"],
     
     "forbidden_words": [{"Lorem": "blah"}, {"ipsum": "blah"}, {"amet": "blah"}]      
 }
