@@ -1,7 +1,7 @@
 { 
     "user": "joaquin.cruz@ug.uchile.cl",
 
-    "blocked": ["http://www.dcc.uchile.cl/", "http://www.uchile.cl"],
+    "blocked": ["http://www.dcc.uchile.cl/", "http://www.uchile.cl/"],
     
     "forbidden_words": [{"Lorem": "blah"}, {"ipsum": "blah"}, {"amet": "blah"}]      
 }
