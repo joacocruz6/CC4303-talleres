@@ -1,9 +1,7 @@
 require 'socket' # necesito la gema de sockets standard
 require 'json'
 require 'uri'
-def replace_forbidden(forbidden_words,text)
-    return 
-end
+
 def run(json_file)
     proxy = TCPServer.open(8888)
     while true
