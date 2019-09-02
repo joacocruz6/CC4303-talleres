@@ -3,7 +3,8 @@ import struct
 import random as r
 import socket 
 from dnslib import DNSRecord
-import pprint
+import sys
+# TODO: Se puede hacer mas facil solo con dnslib
 def to_bytes(value):
     return struct.pack('>H',value)
 def to_normal(value):
@@ -112,113 +113,72 @@ class DNSMessage(object):
         message +=self.question.encode()
         return message
 
-# Funciones para decodear la respuesta
-def decode_labels(message, offset):
-    labels = []
 
-    while True:
-        length, = struct.unpack_from("!B", message, offset)
-
-        if (length & 0xC0) == 0xC0:
-            pointer, = struct.unpack_from("!H", message, offset)
-            offset += 2
-
-            return labels + decode_labels(message, pointer & 0x3FFF), offset
-
-        if (length & 0xC0) != 0x00:
-            raise StandardError("unknown label encoding")
-
-        offset += 1
-
-        if length == 0:
-            return labels, offset
-
-        labels.append(*struct.unpack_from("!%ds" % length, message, offset))
-        offset += length
-
-
-DNS_QUERY_SECTION_FORMAT = struct.Struct("!2H")
-
-def decode_question_section(message, offset, qdcount):
-    questions = []
-
-    for _ in range(qdcount):
-        qname, offset = decode_labels(message, offset)
-
-        qtype, qclass = DNS_QUERY_SECTION_FORMAT.unpack_from(message, offset)
-        offset += DNS_QUERY_SECTION_FORMAT.size
-
-        question = {"domain_name": qname,
-                    "query_type": qtype,
-                    "query_class": qclass}
-
-        questions.append(question)
-
-    return questions, offset
-DNS_QUERY_MESSAGE_HEADER = struct.Struct("!6H")
-def decode_dns_message(message):
-
-    id, misc, qdcount, ancount, nscount, arcount = DNS_QUERY_MESSAGE_HEADER.unpack_from(message)
-
-    qr = (misc & 0x8000) != 0
-    opcode = (misc & 0x7800) >> 11
-    aa = (misc & 0x0400) != 0
-    tc = (misc & 0x200) != 0
-    rd = (misc & 0x100) != 0
-    ra = (misc & 0x80) != 0
-    z = (misc & 0x70) >> 4
-    rcode = misc & 0xF
-
-    offset = DNS_QUERY_MESSAGE_HEADER.size
-    questions, offset = decode_question_section(message, offset, qdcount)
-
-    result = {"id": id,
-              "is_response": qr,
-              "opcode": opcode,
-              "is_authoritative": aa,
-              "is_truncated": tc,
-              "recursion_desired": rd,
-              "recursion_available": ra,
-              "reserved": z,
-              "response_code": rcode,
-              "question_count": qdcount,
-              "answer_count": ancount,
-              "authority_count": nscount,
-              "additional_count": arcount,
-              "questions": questions}
-
-    return result
-
-server = ["198.41.0.4"]
-port = 3000
+server_root = ["198.41.0.4"]
+port = 3000 
 dns_port = 53
-def run()->int:
-    name = "www.google.com."
+def resolver(name: str):
     message = DNSMessage(name)
-    connection = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    connection.settimeout(5)
-    connection.connect((server[0],dns_port))
-    query = message.encode()
-    connection.send(query)
-    response = connection.recv(1024)
-    print(response)
-    d = DNSRecord.parse(response)
-    print(d)
-    print("---------------------------------------------------------")
-    print(d.header.a)
-    print(d.auth)
-    print(d.ar[0].rdata)
-    connection.close()
-    server[0] = str(d.ar[0].rdata)
-    print(server[0])
-    connection = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    connection.connect((server[0],dns_port))
-    connection.send(query)
-    response = connection.recv(1024)
-    print(response)
-    d = DNSRecord.parse(responce)
-    print(d)
-
+    server = server_root[0]
+    while True:
+        connection = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        connection.settimeout(5)
+        connection.connect((server,dns_port))
+        query = message.encode()
+        connection.send(query)
+        response = connection.recv(1024)
+        d = DNSRecord.parse(response)
+        if d.header.rcode == 0:
+            if d.header.aa == 1:
+                for x in d.rr:
+                    if x.rtype == 1:
+                        connection.close()
+                        return d
+                        #return str(x.rdata)
+                break
+            for x in d.ar:
+                if x.rtype == 1:
+                    server = str(x.rdata)
+                    break
+        else:
+            connection.close()
+            return d
+        connection.close()
+def run() -> int:
+    mysocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    server_address = ('localhost',port)
+    mysocket.bind(server_address)
+    cache = list()
+    cache_search = dict()
+    while True:
+        (data,address) = mysocket.recvfrom(1024)
+        data = DNSRecord.parse(data)
+        name = str(data.questions[0].get_qname())
+        if name in cache_search:
+            index = cache_search[name]
+            ipdata = cache[index][1]
+            cache.pop(index)
+            cache.insert(index,(name,ipdata))
+            ipdata.header.id = data.header.id
+            mysocket.sendto(ipdata.pack(),address)
+            print("Cacheado")
+        else:
+            ip = resolver(name)
+            if len(cache) == 10:
+                older_name = cache[9][0]
+                del cache_search[older_name]
+                cache.pop()
+            
+            for key in cache_search:
+                cache_search[key] = cache_search[key] + 1
+            cache_search[name] = 0
+            cache.insert(0,(name,ip))    
+            ip.header.id = data.header.id
+            mysocket.sendto(ip.pack(),address)
+        print(cache)
+    #domain_name = sys.argv[1] +'.'
+    #ipv4=resolver(domain_name)
+    #print(ipv4)
     return 0
 if __name__ == '__main__':
     run()
