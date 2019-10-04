@@ -10,10 +10,11 @@ def run()-> int:
     connection.bind(my_app) 
     while True:
         data,addr = connection.recvfrom(64)
-        packet = decodePacket(data)
+        print(addr)
+        packet = PacketFactory.createDecodedPacket(data)
         print(packet)
-        packet_response = createPacket(0,1,0,"")
-        connection.sendto(packet_response,(host,emitter))
+        #packet_response = createPacket(0,1,0,"")
+        #connection.sendto(packet_response,(host,emitter))
     return 0
 if __name__ == "__main__":
     run()
