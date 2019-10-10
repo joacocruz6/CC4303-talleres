@@ -23,7 +23,7 @@ class UDPPacket(object):
         print(self.header)
     def createData(self):
         self.bytes_data = bytes("#"+self.data,"utf-8")
-    def generatePacket(self):
+    def generatePacket(self)->bytes:
         packet = b''
         self.createHeader()
         self.createData()
@@ -43,33 +43,30 @@ class UDPPacket(object):
     def decodePacket(self,data_received):
         data_received = data_received.split(b"#")
         data_header = data_received[0]
-        print(data_header)
         data_packet = data_received[1]
         self.header = struct.unpack(">Q",data_header)[0]
-        print(self.header)
         self.decodeHeader()
-        print(self.header)
         self.data = data_packet
     def __repr__(self)->str:
         return f"sqn:{self.sqn}\nackn:{self.ackn}\nsyn:{self.syn}\nack:{self.ack}\nfin:{self.fin}\ndata:{self.data}"
 class PacketFactory(object):
     @staticmethod
-    def createSyn(data:str,sqn:int):
+    def createSyn(data:str,sqn:int)->UDPPacket:
         pack = UDPPacket(sqn,0,1,0,0,data)
         data = pack.generatePacket()
         return data
     @staticmethod
-    def createAck(data:str,sqn:int,ackn:int,syn=0):
+    def createAck(data:str,sqn:int,ackn:int,syn=0)->UDPPacket:
         pack = UDPPacket(sqn,ackn,syn,1,0,data)
         data = pack.generatePacket()
         return data
     @staticmethod
-    def createFin(data:str,sqn:int,ackn:int,ack=0):
+    def createFin(data:str,sqn:int,ackn:int,ack=0)->UDPPacket:
         pack = UDPPacket(sqn,ackn,0,ack,1,data)
         data = pack.generatePacket()
         return data
     @staticmethod
-    def createDecodedPacket(data:bytes):
+    def parseBytes(data:bytes):
         pack = UDPPacket(0,0,0,0,0,data)
         pack.decodePacket(data)
         return pack
