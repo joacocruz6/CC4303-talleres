@@ -1,5 +1,36 @@
 import struct
 from collections import namedtuple
+class Route(object):
+    @staticmethod
+    def compare(network:str,bits:int,ip:str)->bool:
+        network = network.split('.')
+        ip = ip.split('.')
+        i = 0
+        while i<bits:
+            if network[i] != ip[i]:
+                return False
+            i+=1
+        return True
+    def __init__(self,red: str, bits: str,puerto_inicial: str, puerto_final: str, ip_llegada: str, puerto_llegada: str):
+        self.red = red
+        self.bits = int(bits) // 8
+        self.puerto_inicial = int(puerto_inicial)
+        self.puerto_final = int(puerto_final)
+        self.ip_llegada = ip_llegada
+        self.puerto_llegada = int(puerto_llegada)
+        self.carga = 0
+    def addCarga(self)->None:
+        self.carga += 1
+    def getCarga(self)->int:
+        return self.carga
+    def getIp_llegada(self)->str:
+        return self.ip_llegada
+    def getPuertollegada(self)->int:
+        return self.puerto_llegada
+    def canForward(self,ip:str,port:str)->bool:
+        port = int(port)
+        return Route.compare(self.red,self.bits,ip) and self.puerto_inicial <= port <= self.puerto_final
+    
 class PacketIP(object):
     def __init__(self,data: str,ip_src:str,ip_dest: str,ip_dest_final: str,port_dest_f: str):
         self.data = data
@@ -12,7 +43,7 @@ class PacketIP(object):
     def codeData(self):
         return bytes(self.data,"utf-8")
     def createPacket(self):
-        return self.codeHeader() + "#"+ self.codeData()
+        return self.codeHeader() + b"#"+ self.codeData()
     def decodePacket(self,data):
         data = data.split(b"#")
         my_header = data[0]
@@ -33,13 +64,13 @@ class PacketParser(object):
         return my_packet
 class RouteParser(object):
     @staticmethod
-    def makeRouteTable(file_name:str,constructor)->list:
+    def makeRouteTable(file_name:str)->list:
         table = list()
         with open(file_name,"r") as my_file:
             for line in my_file:
                 line = line[:-1]
                 line = line.split(',')
                 red = line[0].split('/')
-                obj = constructor(red[0],red[1],line[1],line[2],line[3],line[4])
+                obj = Route(red[0],red[1],line[1],line[2],line[3],line[4])
                 table.append(obj)
         return table
