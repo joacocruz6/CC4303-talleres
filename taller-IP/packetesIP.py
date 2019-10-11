@@ -39,6 +39,7 @@ class RouteParser(object):
             for line in my_file:
                 line = line[:-1]
                 line = line.split(',')
-                obj = constructor(line[0],line[1],line[2],line[3],line[4])
+                red = line[0].split('/')
+                obj = constructor(red[0],red[1],line[1],line[2],line[3],line[4])
                 table.append(obj)
         return table
