@@ -18,6 +18,8 @@ class Route(object):
         self.puerto_final = int(puerto_final)
         self.ip_llegada = ip_llegada
         self.puerto_llegada = int(puerto_llegada)
+    def __repr__(self):
+        return f"Route(red={self.red},bits={self.bits},init_port={self.puerto_inicial},fin_port={self.puerto_final},dest_ip={self.ip_llegada},dest_port={self.puerto_llegada})"
     def getIp_llegada(self)->str:
         return self.ip_llegada
     def getPuertollegada(self)->int:
@@ -26,6 +28,7 @@ class Route(object):
         port = int(port)
         return Route.compare(self.red,self.bits,ip) and self.puerto_inicial <= port <= self.puerto_final
     
+
 class PacketIP(object):
     def __init__(self,data: str,ip_src:str,ip_dest: str,ip_dest_final: str,port_dest_f: str,ttl: str):
         self.data = data
@@ -48,6 +51,8 @@ class PacketIP(object):
         self.header = list(map(lambda x: x.decode("utf-8"),my_header.split(b";")))
         self.header[2] = int(self.header[2])
         self.data = my_data.decode("utf-8")
+    def __len__(self):
+        return len(bytes(self.data,"utf-8"))
     def getDestFinal(self):
         return self.header[0]
     def getPortFinal(self):
