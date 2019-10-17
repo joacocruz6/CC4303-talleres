@@ -14,7 +14,9 @@ def tableLookup(table: list,ip:str,port: str)->tuple:
             min_carga = route.getCarga()
     if candidate == NULL:
         raise Exception('No routes')
-    candidate.addCarga()
+    ## Round Robin, saco el candidato y lo pongo al final de la tabla
+    table.remove(candidate)
+    table.append(candidate)
     return (candidate.getIp_llegada(),candidate.getPuertollegada())
 def main(args:list)->int:
     host = args[1]

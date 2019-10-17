@@ -32,11 +32,12 @@ class Route(object):
         return Route.compare(self.red,self.bits,ip) and self.puerto_inicial <= port <= self.puerto_final
     
 class PacketIP(object):
-    def __init__(self,data: str,ip_src:str,ip_dest: str,ip_dest_final: str,port_dest_f: str):
+    def __init__(self,data: str,ip_src:str,ip_dest: str,ip_dest_final: str,port_dest_f: str,ttl: str):
         self.data = data
         self.header = list()
         self.header.append(ip_dest_final)
         self.header.append(port_dest_f)
+        self.header.append(int(ttl))
     def codeHeader(self)->bytes:
         my_header = ";".join(self.header)
         return bytes(my_header,"utf-8")
@@ -49,17 +50,24 @@ class PacketIP(object):
         my_header = data[0]
         my_data = data[1]
         self.header = list(map(lambda x: x.decode("utf-8"),my_header.split(b";")))
+        self.header[2] = int(self.header[2])
         self.data = my_data.decode("utf-8")
     def getDestFinal(self):
         return self.header[0]
     def getPortFinal(self):
         return self.header[1]
+    def getTTL(self):
+        return self.header[2]
+    def setTTL(self,new_ttl: int):
+        self.header[2] = new_ttl
+    def minusTTL(self):
+        self.header[2] = self.header[2]-1
     def __repr__(self):
         return f"ip_dest_final:{self.header[0]}\nport_destino_final:{self.header[1]}\ndata:{self.data}"
 class PacketParser(object):
     @staticmethod
     def makePacketFromData(data:bytes)->PacketIP:
-        my_packet = PacketIP("","","","","")
+        my_packet = PacketIP("","","","","","0")
         my_packet.decodePacket(data)
         return my_packet
 class RouteParser(object):
