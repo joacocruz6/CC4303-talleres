@@ -18,11 +18,6 @@ class Route(object):
         self.puerto_final = int(puerto_final)
         self.ip_llegada = ip_llegada
         self.puerto_llegada = int(puerto_llegada)
-        self.carga = 0
-    def addCarga(self)->None:
-        self.carga += 1
-    def getCarga(self)->int:
-        return self.carga
     def getIp_llegada(self)->str:
         return self.ip_llegada
     def getPuertollegada(self)->int:
@@ -39,7 +34,8 @@ class PacketIP(object):
         self.header.append(port_dest_f)
         self.header.append(int(ttl))
     def codeHeader(self)->bytes:
-        my_header = ";".join(self.header)
+        my_header = list(map(lambda x: str(x),self.header))
+        my_header = ";".join(my_header)
         return bytes(my_header,"utf-8")
     def codeData(self):
         return bytes(self.data,"utf-8")

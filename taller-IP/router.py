@@ -31,12 +31,17 @@ def main(args:list)->int:
         data_received,addr = my_socket.recvfrom(DATA_SIZE)
         if data_received:
             ip_packet = PacketParser.makePacketFromData(data_received)
-            if ip_packet.getDestFinal() == host and ip_packet.getPortFinal() == port:
-                print(ip_packet.data)
-            else:
-                next_destination = tableLookup(tabla_ruteo,ip_packet.getDestFinal(),ip_packet.getPortFinal())
-                fast_forwarding = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-                fast_forwarding.sendto(ip_packet.createPacket(),next_destination)
+            ip_packet.minusTTL()
+            print(ip_packet.getTTL())
+            if ip_packet.getTTL() != 0:    
+                if ip_packet.getDestFinal() == host and ip_packet.getPortFinal() == port:
+                    print(ip_packet.data)
+                else:
+                    print(tabla_ruteo)
+                    next_destination = tableLookup(tabla_ruteo,ip_packet.getDestFinal(),ip_packet.getPortFinal())
+                    fast_forwarding = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+                    fast_forwarding.sendto(ip_packet.createPacket(),next_destination)
+                    print(tabla_ruteo)
 if __name__ == "__main__":
     main(sys.argv)
 ## nc -u ip_router port_rocuter < archivo <<EOF
